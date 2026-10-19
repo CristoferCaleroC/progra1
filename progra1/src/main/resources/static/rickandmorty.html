@@ -250,48 +250,76 @@
             </div>
         </div>
     </div>
-
-    <script>
+<script>
         let seccionActual = 'personajes';
         let listaDatos = [];
+        let paginaActual = 1;
+        let hayMasPaginas = true;
+        let cargando = false;
         let temporizadorBusqueda = null;
 
-// Función para consumir TODAS las páginas de la API a través de tu backend
+        // 1. Cargar la primera página al iniciar o cambiar de pestaña
         async function cargarSeccion(seccion) {
             seccionActual = seccion;
+            paginaActual = 1;
+            hayMasPaginas = true;
+            listaDatos = [];
+            
+            const grid = document.getElementById('charactersGrid');
+            grid.innerHTML = ''; // Limpiar vista anterior
+
+            await cargarPagina(seccion, paginaActual);
+        }
+
+        // 2. Función para solicitar una página específica al backend (BFF) de forma paginada
+        async function cargarPagina(seccion, pagina) {
+            if (cargando || !hayMasPaginas) return;
+            cargando = true;
+
             const statusMessage = document.getElementById('statusMessage');
-            statusMessage.textContent = "⏳ Cargando todos los registros desde el servidor...";
+            statusMessage.textContent = `⏳ Cargando más registros de ${seccion}...`;
 
             try {
-                let resultadosTotales = [];
-                let pagina = 1;
-                let hayMasPaginas = true;
+                const response = await fetch(`/api/rickandmorty/${seccion}?page=${pagina}`);
+                const data = await response.json();
 
-                while (hayMasPaginas) {
-                    const response = await fetch(`/api/rickandmorty/${seccion}?page=${pagina}`);
-                    const data = await response.json();
+                if (data.results && data.results.length > 0) {
+                    // Acumulamos los nuevos elementos a la lista existente
+                    listaDatos = listaDatos.concat(data.results);
+                    mostrarTarjetas(listaDatos);
 
-                    if (data.results) {
-                        resultadosTotales = resultadosTotales.concat(data.results);
-                    }
-
-                    // Si la API indica que hay más páginas en data.info.next, continuamos
+                    // Verificamos si la API tiene una página siguiente
                     if (data.info && data.info.next) {
-                        pagina++;
+                        paginaActual++;
                     } else {
                         hayMasPaginas = false;
                     }
+                } else {
+                    hayMasPaginas = false;
                 }
 
-                listaDatos = resultadosTotales;
-                mostrarTarjetas(listaDatos);
                 statusMessage.textContent = "";
-                console.log(`Se cargaron ${listaDatos.length} elementos en total para ${seccion}.`);
             } catch (error) {
                 console.error(`Error al cargar ${seccion}:`, error);
                 statusMessage.textContent = "❌ Error al cargar los datos.";
+            } finally {
+                cargando = false;
             }
         }
+
+        // 3. Detector de Scroll Infinito
+        window.addEventListener('scroll', () => {
+            // Si hay texto en el buscador, desactivamos el scroll infinito momentáneamente
+            const inputBusqueda = document.getElementById('searchInput').value.trim();
+            if (inputBusqueda !== "") return;
+
+            // Detectar si el usuario está a 300px del final de la página
+            if ((window.innerHeight + window.scrollY) >= document.documentElement.scrollHeight - 300) {
+                if (!cargando && hayMasPaginas) {
+                    cargarPagina(seccionActual, paginaActual);
+                }
+            }
+        });
 
         // Manejar el cambio entre pestañas
         function cambiarSeccion(seccion) {
@@ -454,7 +482,7 @@
             }, 2000);
         }
 
-        // Cargar personajes al iniciar
+        // Cargar primera página al iniciar
         cargarSeccion('personajes');
     </script>
 </body>
