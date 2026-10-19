@@ -251,240 +251,285 @@
         </div>
     </div>
 <script>
-        let seccionActual = 'personajes';
-        let listaDatos = [];
-        let paginaActual = 1;
-        let hayMasPaginas = true;
-        let cargando = false;
-        let temporizadorBusqueda = null;
+    let seccionActual = 'personajes';
+    let listaDatos = [];
+    let paginaActual = 1;
+    let hayMasPaginas = true;
+    let cargando = false;
+    let temporizadorBusqueda = null;
+    let intervaloContador = null;
 
-        // 1. Cargar la primera página al iniciar o cambiar de pestaña
-        async function cargarSeccion(seccion) {
-            seccionActual = seccion;
-            paginaActual = 1;
-            hayMasPaginas = true;
-            listaDatos = [];
-            
-            const grid = document.getElementById('charactersGrid');
-            grid.innerHTML = ''; // Limpiar vista anterior
+    // 1. Cargar la primera página al iniciar o cambiar de pestaña
+    async function cargarSeccion(seccion) {
+        seccionActual = seccion;
+        paginaActual = 1;
+        hayMasPaginas = true;
+        listaDatos = [];
+        
+        const grid = document.getElementById('charactersGrid');
+        grid.innerHTML = ''; // Limpiar vista anterior
 
-            await cargarPagina(seccion, paginaActual);
-        }
+        await cargarPagina(seccion, paginaActual);
+    }
 
-        // 2. Función para solicitar una página específica al backend (BFF) de forma paginada
-        async function cargarPagina(seccion, pagina) {
-            if (cargando || !hayMasPaginas) return;
-            cargando = true;
+    // 2. Función para solicitar una página específica al backend (BFF)
+    async function cargarPagina(seccion, pagina) {
+        if (cargando || !hayMasPaginas) return;
+        cargando = true;
 
-            const statusMessage = document.getElementById('statusMessage');
-            statusMessage.textContent = `⏳ Cargando más registros de ${seccion}...`;
+        const statusMessage = document.getElementById('statusMessage');
+        statusMessage.textContent = `⏳ Cargando más registros de ${seccion}...`;
 
-            try {
-                const response = await fetch(`/api/rickandmorty/${seccion}?page=${pagina}`);
-                const data = await response.json();
+        try {
+            const response = await fetch(`/api/rickandmorty/${seccion}?page=${pagina}`);
+            const data = await response.json();
 
-                if (data.results && data.results.length > 0) {
-                    // Acumulamos los nuevos elementos a la lista existente
-                    listaDatos = listaDatos.concat(data.results);
-                    mostrarTarjetas(listaDatos);
+            if (data.results && data.results.length > 0) {
+                listaDatos = listaDatos.concat(data.results);
+                mostrarTarjetas(listaDatos);
 
-                    // Verificamos si la API tiene una página siguiente
-                    if (data.info && data.info.next) {
-                        paginaActual++;
-                    } else {
-                        hayMasPaginas = false;
-                    }
+                if (data.info && data.info.next) {
+                    paginaActual++;
                 } else {
                     hayMasPaginas = false;
                 }
+            } else {
+                hayMasPaginas = false;
+            }
 
-                statusMessage.textContent = "";
-            } catch (error) {
-                console.error(`Error al cargar ${seccion}:`, error);
-                statusMessage.textContent = "❌ Error al cargar los datos.";
-            } finally {
-                cargando = false;
+            statusMessage.textContent = "";
+        } catch (error) {
+            console.error(`Error al cargar ${seccion}:`, error);
+            statusMessage.textContent = "❌ Error al cargar los datos.";
+        } finally {
+            cargando = false;
+        }
+    }
+
+    // 3. Detector de Scroll Infinito (Solo si el buscador está vacío)
+    window.addEventListener('scroll', () => {
+        const inputBusqueda = document.getElementById('searchInput').value.trim();
+        if (inputBusqueda !== "") return; // Desactivar scroll en modo búsqueda
+
+        if ((window.innerHeight + window.scrollY) >= document.documentElement.scrollHeight - 300) {
+            if (!cargando && hayMasPaginas) {
+                cargarPagina(seccionActual, paginaActual);
             }
         }
+    });
 
-        // 3. Detector de Scroll Infinito
-        window.addEventListener('scroll', () => {
-            // Si hay texto en el buscador, desactivamos el scroll infinito momentáneamente
-            const inputBusqueda = document.getElementById('searchInput').value.trim();
-            if (inputBusqueda !== "") return;
+    // Cambiar de pestaña
+    function cambiarSeccion(seccion) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(`tab-${seccion}`).classList.add('active');
+        
+        document.getElementById('searchInput').value = '';
+        document.getElementById('statusMessage').textContent = '';
+        clearTimeout(temporizadorBusqueda);
+        if (intervaloContador) clearInterval(intervaloContador);
 
-            // Detectar si el usuario está a 300px del final de la página
-            if ((window.innerHeight + window.scrollY) >= document.documentElement.scrollHeight - 300) {
-                if (!cargando && hayMasPaginas) {
-                    cargarPagina(seccionActual, paginaActual);
-                }
-            }
-        });
+        cargarSeccion(seccion);
+    }
 
-        // Manejar el cambio entre pestañas
-        function cambiarSeccion(seccion) {
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`tab-${seccion}`).classList.add('active');
-            
-            document.getElementById('searchInput').value = '';
-            document.getElementById('statusMessage').textContent = '';
-            clearTimeout(temporizadorBusqueda);
+    // Renderizar tarjetas
+    function mostrarTarjetas(items) {
+        const grid = document.getElementById('charactersGrid');
+        grid.innerHTML = '';
 
-            cargarSeccion(seccion);
+        if (!items || items.length === 0) {
+            grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #777; font-size: 16px;">No se encontraron resultados.</p>';
+            return;
         }
 
-        // Renderizar tarjetas según la pestaña seleccionada
-        function mostrarTarjetas(items) {
-            const grid = document.getElementById('charactersGrid');
-            grid.innerHTML = '';
-
-            items.forEach(item => {
-                const card = document.createElement('div');
-                card.className = 'card';
-                card.dataset.id = item.id;
-                card.style.cursor = 'pointer';
-                card.onclick = () => abrirModal(item.id);
-
-                if (seccionActual === 'personajes') {
-                    card.innerHTML = `
-                        <img src="${item.image}" alt="${item.name}">
-                        <div class="card-body">
-                            <div class="card-title">${item.name} <span style="font-weight: normal; color: #777;">(#${item.id})</span></div>
-                        </div>
-                    `;
-                } else if (seccionActual === 'lugares') {
-                    card.innerHTML = `
-                        <div class="card-body" style="padding: 35px 15px;">
-                            <div class="card-title">📍 ${item.name}</div>
-                            <div class="card-subtitle">ID: #${item.id}</div>
-                            <div class="card-subtitle" style="margin-top: 8px; color: #27ae60; font-weight: 600;">Tipo: ${item.type || 'N/A'}</div>
-                        </div>
-                    `;
-                } else if (seccionActual === 'episodios') {
-                    card.innerHTML = `
-                        <div class="card-body" style="padding: 35px 15px;">
-                            <div class="card-title">🎬 ${item.name}</div>
-                            <div class="card-subtitle">Episodio: <strong>${item.episode}</strong></div>
-                            <div class="card-subtitle" style="margin-top: 8px; color: #e67e22; font-weight: 600;">Fecha: ${item.air_date}</div>
-                        </div>
-                    `;
-                }
-
-                grid.appendChild(card);
-            });
-        }
-
-        // --- FUNCIONES DEL MODAL ---
-        function abrirModal(id) {
-            const item = listaDatos.find(i => i.id === id);
-            if (!item) return;
-
-            const modalBody = document.getElementById('modalBody');
+        items.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.dataset.id = item.id;
+            card.style.cursor = 'pointer';
+            card.onclick = () => abrirModal(item.id, item);
 
             if (seccionActual === 'personajes') {
-                modalBody.innerHTML = `
+                card.innerHTML = `
                     <img src="${item.image}" alt="${item.name}">
-                    <h2>${item.name}</h2>
-                    <div class="modal-details">
-                        <p><strong>ID:</strong> ${item.id}</p>
-                        <p><strong>Especie:</strong> ${traducirEspecie(item.species)}</p>
-                        <p><strong>Estado:</strong> ${traducirEstado(item.status)}</p>
-                        <p><strong>Género:</strong> ${traducirGenero(item.gender)}</p>
-                        <p><strong>Origen:</strong> ${item.origin ? item.origin.name : 'Desconocido'}</p>
+                    <div class="card-body">
+                        <div class="card-title">${item.name} <span style="font-weight: normal; color: #777;">(#${item.id})</span></div>
                     </div>
                 `;
             } else if (seccionActual === 'lugares') {
-                modalBody.innerHTML = `
-                    <h2>📍 ${item.name}</h2>
-                    <div class="modal-details">
-                        <p><strong>ID:</strong> ${item.id}</p>
-                        <p><strong>Tipo:</strong> ${item.type || 'Desconocido'}</p>
-                        <p><strong>Dimensión:</strong> ${item.dimension || 'Desconocida'}</p>
-                        <p><strong>Residentes:</strong> ${item.residents ? item.residents.length : 0} personajes</p>
+                card.innerHTML = `
+                    <div class="card-body" style="padding: 35px 15px;">
+                        <div class="card-title">📍 ${item.name}</div>
+                        <div class="card-subtitle">ID: #${item.id}</div>
+                        <div class="card-subtitle" style="margin-top: 8px; color: #27ae60; font-weight: 600;">Tipo: ${item.type || 'N/A'}</div>
                     </div>
                 `;
             } else if (seccionActual === 'episodios') {
-                modalBody.innerHTML = `
-                    <h2>🎬 ${item.name}</h2>
-                    <div class="modal-details">
-                        <p><strong>ID:</strong> ${item.id}</p>
-                        <p><strong>Código:</strong> ${item.episode}</p>
-                        <p><strong>Fecha de estreno:</strong> ${item.air_date}</p>
-                        <p><strong>Personajes en escena:</strong> ${item.characters ? item.characters.length : 0}</p>
+                card.innerHTML = `
+                    <div class="card-body" style="padding: 35px 15px;">
+                        <div class="card-title">🎬 ${item.name}</div>
+                        <div class="card-subtitle">Episodio: <strong>${item.episode}</strong></div>
+                        <div class="card-subtitle" style="margin-top: 8px; color: #e67e22; font-weight: 600;">Fecha: ${item.air_date}</div>
                     </div>
                 `;
             }
 
-            document.getElementById('characterModal').classList.add('active');
+            grid.appendChild(card);
+        });
+    }
+
+    // --- BUSCADOR CON DEBOUNCE (4 SEGUNDOS VISUALES Y BÚSQUEDA REMOTA DIRECTA) ---
+    function manejarBusquedaConDelay() {
+        const input = document.getElementById('searchInput');
+        const statusMessage = document.getElementById('statusMessage');
+
+        clearTimeout(temporizadorBusqueda);
+        if (intervaloContador) clearInterval(intervaloContador);
+
+        const busqueda = input.value.trim();
+
+        if (busqueda === "") {
+            statusMessage.textContent = "";
+            mostrarTarjetas(listaDatos); // Restaurar lista paginada local
+            return;
         }
 
-        function cerrarModal() {
-            document.getElementById('characterModal').classList.remove('active');
-        }
+        let segundosRestantes = 4;
+        statusMessage.textContent = `⏳ Esperando ${segundosRestantes} segundos (Debounce) para buscar en la API...`;
 
-        function cerrarModalExterno(event) {
-            if (event.target.classList.contains('modal-overlay')) {
-                cerrarModal();
+        intervaloContador = setInterval(() => {
+            segundosRestantes--;
+            if (segundosRestantes > 0) {
+                statusMessage.textContent = `⏳ Esperando ${segundosRestantes} segundo${segundosRestantes > 1 ? 's' : ''} (Debounce) para buscar en la API...`;
+            } else {
+                clearInterval(intervaloContador);
             }
-        }
+        }, 1000);
 
-        // Traducciones
-        function traducirEspecie(species) {
-            if (species === 'Human') return 'Humano';
-            if (species === 'Alien') return 'Alienígena';
-            return species;
-        }
+        temporizadorBusqueda = setTimeout(() => {
+            statusMessage.textContent = "🔍 Buscando en la API...";
+            ejecutarBusquedaRealRemota(busqueda);
+        }, 4000);
+    }
 
-        function traducirEstado(status) {
-            if (status === 'Alive') return 'Vivo';
-            if (status === 'Dead') return 'Muerto';
-            return 'Desconocido';
-        }
+    // Búsqueda remota inteligente
+    async function ejecutarBusquedaRealRemota(query) {
+        const statusMessage = document.getElementById('statusMessage');
+        const esNumero = !isNaN(query);
 
-        function traducirGenero(gender) {
-            if (gender === 'Male') return 'Masculino';
-            if (gender === 'Female') return 'Femenino';
-            return 'Desconocido';
-        }
+        try {
+            let resultados = [];
 
-        // --- BUSCADOR CON DEBOUNCE (4 SEGUNDOS) ---
-        function manejarBusquedaConDelay() {
-            const input = document.getElementById('searchInput');
-            const statusMessage = document.getElementById('statusMessage');
+            if (esNumero) {
+                // Si es un ID específico (ej. 100), consultar el elemento directamente por ID
+                const singularMap = { 'personajes': 'character', 'lugares': 'location', 'episodios': 'episode' };
+                const endpointSingular = singularMap[seccionActual] || 'character';
+                
+                const response = await fetch(`https://rickandmortyapi.com/api/${endpointSingular}/${query}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    resultados = [data];
+                }
+            } else {
+                // Si es texto (ej. "Rick"), consultar por parámetro de nombre a la API
+                const singularMap = { 'personajes': 'character', 'lugares': 'location', 'episodios': 'episode' };
+                const endpointSingular = singularMap[seccionActual] || 'character';
 
-            if (input.value.trim() === "") {
-                clearTimeout(temporizadorBusqueda);
-                statusMessage.textContent = "";
-                mostrarTarjetas(listaDatos);
-                return;
+                const response = await fetch(`https://rickandmortyapi.com/api/${endpointSingular}/?name=${encodeURIComponent(query)}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    resultados = data.results || [];
+                }
             }
 
-            statusMessage.textContent = "⏳ Esperando 4 segundos (Debounce) para realizar la búsqueda...";
-            clearTimeout(temporizadorBusqueda);
+            mostrarTarjetas(resultados);
+            statusMessage.textContent = resultados.length > 0 ? "✅ ¡Búsqueda completada!" : "⚠️ No se encontraron resultados.";
 
-            temporizadorBusqueda = setTimeout(() => {
-                statusMessage.textContent = "✅ ¡Búsqueda realizada!";
-                ejecutarBusquedaReal();
-            }, 4000);
+        } catch (error) {
+            console.error("Error en la búsqueda remota:", error);
+            statusMessage.textContent = "❌ Error al realizar la búsqueda en la API.";
         }
 
-        function ejecutarBusquedaReal() {
-            const busqueda = document.getElementById('searchInput').value.toLowerCase().trim();
+        setTimeout(() => {
+            statusMessage.textContent = "";
+        }, 2500);
+    }
 
-            const filtrados = listaDatos.filter(item => {
-                return item.name.toLowerCase().includes(busqueda) || item.id.toString() === busqueda;
-            });
+    // --- FUNCIONES DEL MODAL ---
+    function abrirModal(id, itemDirecto = null) {
+        let item = itemDirecto || listaDatos.find(i => i.id === id);
+        if (!item) return;
 
-            mostrarTarjetas(filtrados);
+        const modalBody = document.getElementById('modalBody');
 
-            setTimeout(() => {
-                document.getElementById('statusMessage').textContent = "";
-            }, 2000);
+        if (seccionActual === 'personajes') {
+            modalBody.innerHTML = `
+                <img src="${item.image}" alt="${item.name}">
+                <h2>${item.name}</h2>
+                <div class="modal-details">
+                    <p><strong>ID:</strong> ${item.id}</p>
+                    <p><strong>Especie:</strong> ${traducirEspecie(item.species)}</p>
+                    <p><strong>Estado:</strong> ${traducirEstado(item.status)}</p>
+                    <p><strong>Género:</strong> ${traducirGenero(item.gender)}</p>
+                    <p><strong>Origen:</strong> ${item.origin ? item.origin.name : 'Desconocido'}</p>
+                </div>
+            `;
+        } else if (seccionActual === 'lugares') {
+            modalBody.innerHTML = `
+                <h2>📍 ${item.name}</h2>
+                <div class="modal-details">
+                    <p><strong>ID:</strong> ${item.id}</p>
+                    <p><strong>Tipo:</strong> ${item.type || 'Desconocido'}</p>
+                    <p><strong>Dimensión:</strong> ${item.dimension || 'Desconocida'}</p>
+                    <p><strong>Residentes:</strong> ${item.residents ? item.residents.length : 0} personajes</p>
+                </div>
+            `;
+        } else if (seccionActual === 'episodios') {
+            modalBody.innerHTML = `
+                <h2>🎬 ${item.name}</h2>
+                <div class="modal-details">
+                    <p><strong>ID:</strong> ${item.id}</p>
+                    <p><strong>Código:</strong> ${item.episode}</p>
+                    <p><strong>Fecha de estreno:</strong> ${item.air_date}</p>
+                    <p><strong>Personajes en escena:</strong> ${item.characters ? item.characters.length : 0}</p>
+                </div>
+            `;
         }
 
-        // Cargar primera página al iniciar
-        cargarSeccion('personajes');
-    </script>
+        document.getElementById('characterModal').classList.add('active');
+    }
+
+    function cerrarModal() {
+        document.getElementById('characterModal').classList.remove('active');
+    }
+
+    function cerrarModalExterno(event) {
+        if (event.target.classList.contains('modal-overlay')) {
+            cerrarModal();
+        }
+    }
+
+    // Traducciones
+    function traducirEspecie(species) {
+        if (species === 'Human') return 'Humano';
+        if (species === 'Alien') return 'Alienígena';
+        return species || 'Desconocido';
+    }
+
+    function traducirEstado(status) {
+        if (status === 'Alive') return 'Vivo';
+        if (status === 'Dead') return 'Muerto';
+        return 'Desconocido';
+    }
+
+    function traducirGenero(gender) {
+        if (gender === 'Male') return 'Masculino';
+        if (gender === 'Female') return 'Femenino';
+        return 'Desconocido';
+    }
+
+    // Cargar primera página al iniciar
+    cargarSeccion('personajes');
+</script>
 </body>
 
 </html>
