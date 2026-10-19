@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rick & Morty API</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f4f5f7;
+            padding: 20px;
+            color: #333;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1000px;
+            margin: 0 auto 20px auto;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .btn-volver {
+            background-color: #2b3a4a;
+            color: white;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .tabs {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            background-color: #e0e0e0;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #555;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            background-color: #27ae60;
+            color: white;
+        }
+
+        .search-container {
+            margin-bottom: 25px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 14px 20px;
+            border-radius: 25px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+            outline: none;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            text-align: center;
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .card-body {
+            padding: 15px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .card-subtitle {
+            font-size: 13px;
+            color: #7f8c8d;
+            margin-top: 4px;
+        }
+
+        /* --- ESTILOS DEL MODAL --- */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 400px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            position: relative;
+            animation: modalFadeIn 0.3s;
+        }
+
+        @keyframes modalFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .modal-header {
+            background-color: #e74c3c;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .modal-body {
+            padding: 20px;
+            text-align: left;
+        }
+
+        .modal-body img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+
+        .modal-body h2 {
+            font-size: 22px;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .modal-details p {
+            margin-bottom: 8px;
+            font-size: 14px;
+            color: #555;
+        }
+
+        .modal-details strong {
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <h1>Rick & Morty</h1>
+        <a href="productos.html" class="btn-volver">← Volver a Productos</a>
+    </div>
+
+    <div class="container">
+        <!-- Pestañas -->
+        <div class="tabs">
+            <button class="tab-btn active" id="tab-personajes" onclick="cambiarSeccion('personajes')">1. Personajes</button>
+            <button class="tab-btn" id="tab-lugares" onclick="cambiarSeccion('lugares')">2. Lugares</button>
+            <button class="tab-btn" id="tab-episodios" onclick="cambiarSeccion('episodios')">3. Episodios</button>
+        </div>
+
+        <!-- Buscador con mensaje de Delay -->
+        <div class="search-container">
+            <input type="text" id="searchInput" class="search-input" placeholder="Escribe para buscar (Nombre o ID)"
+                onkeyup="manejarBusquedaConDelay()">
+            <div id="statusMessage"
+                style="font-size: 13px; color: #7f8c8d; margin-top: 6px; text-align: center; font-style: italic;"></div>
+        </div>
+
+        <!-- Lista de tarjetas -->
+        <div class="grid-container" id="charactersGrid">
+            <!-- Se cargará dinámicamente -->
+        </div>
+    </div>
+
+    <!-- Modal para Detalle -->
+    <div class="modal-overlay" id="characterModal" onclick="cerrarModalExterno(event)">
+        <div class="modal-content">
+            <div class="modal-header" onclick="cerrarModal()">
+                ← BACK (Cerrar)
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- El contenido se cargará dinámicamente -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let seccionActual = 'personajes';
+        let listaDatos = [];
+        let temporizadorBusqueda = null;
+
+// Función para consumir TODAS las páginas de la API a través de tu backend
+        async function cargarSeccion(seccion) {
+            seccionActual = seccion;
+            const statusMessage = document.getElementById('statusMessage');
+            statusMessage.textContent = "⏳ Cargando todos los registros desde el servidor...";
+
+            try {
+                let resultadosTotales = [];
+                let pagina = 1;
+                let hayMasPaginas = true;
+
+                while (hayMasPaginas) {
+                    const response = await fetch(`/api/rickandmorty/${seccion}?page=${pagina}`);
+                    const data = await response.json();
+
+                    if (data.results) {
+                        resultadosTotales = resultadosTotales.concat(data.results);
+                    }
+
+                    // Si la API indica que hay más páginas en data.info.next, continuamos
+                    if (data.info && data.info.next) {
+                        pagina++;
+                    } else {
+                        hayMasPaginas = false;
+                    }
+                }
+
+                listaDatos = resultadosTotales;
+                mostrarTarjetas(listaDatos);
+                statusMessage.textContent = "";
+                console.log(`Se cargaron ${listaDatos.length} elementos en total para ${seccion}.`);
+            } catch (error) {
+                console.error(`Error al cargar ${seccion}:`, error);
+                statusMessage.textContent = "❌ Error al cargar los datos.";
+            }
+        }
+
+        // Manejar el cambio entre pestañas
+        function cambiarSeccion(seccion) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`tab-${seccion}`).classList.add('active');
+            
+            document.getElementById('searchInput').value = '';
+            document.getElementById('statusMessage').textContent = '';
+            clearTimeout(temporizadorBusqueda);
+
+            cargarSeccion(seccion);
+        }
+
+        // Renderizar tarjetas según la pestaña seleccionada
+        function mostrarTarjetas(items) {
+            const grid = document.getElementById('charactersGrid');
+            grid.innerHTML = '';
+
+            items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.dataset.id = item.id;
+                card.style.cursor = 'pointer';
+                card.onclick = () => abrirModal(item.id);
+
+                if (seccionActual === 'personajes') {
+                    card.innerHTML = `
+                        <img src="${item.image}" alt="${item.name}">
+                        <div class="card-body">
+                            <div class="card-title">${item.name} <span style="font-weight: normal; color: #777;">(#${item.id})</span></div>
+                        </div>
+                    `;
+                } else if (seccionActual === 'lugares') {
+                    card.innerHTML = `
+                        <div class="card-body" style="padding: 35px 15px;">
+                            <div class="card-title">📍 ${item.name}</div>
+                            <div class="card-subtitle">ID: #${item.id}</div>
+                            <div class="card-subtitle" style="margin-top: 8px; color: #27ae60; font-weight: 600;">Tipo: ${item.type || 'N/A'}</div>
+                        </div>
+                    `;
+                } else if (seccionActual === 'episodios') {
+                    card.innerHTML = `
+                        <div class="card-body" style="padding: 35px 15px;">
+                            <div class="card-title">🎬 ${item.name}</div>
+                            <div class="card-subtitle">Episodio: <strong>${item.episode}</strong></div>
+                            <div class="card-subtitle" style="margin-top: 8px; color: #e67e22; font-weight: 600;">Fecha: ${item.air_date}</div>
+                        </div>
+                    `;
+                }
+
+                grid.appendChild(card);
+            });
+        }
+
+        // --- FUNCIONES DEL MODAL ---
+        function abrirModal(id) {
+            const item = listaDatos.find(i => i.id === id);
+            if (!item) return;
+
+            const modalBody = document.getElementById('modalBody');
+
+            if (seccionActual === 'personajes') {
+                modalBody.innerHTML = `
+                    <img src="${item.image}" alt="${item.name}">
+                    <h2>${item.name}</h2>
+                    <div class="modal-details">
+                        <p><strong>ID:</strong> ${item.id}</p>
+                        <p><strong>Especie:</strong> ${traducirEspecie(item.species)}</p>
+                        <p><strong>Estado:</strong> ${traducirEstado(item.status)}</p>
+                        <p><strong>Género:</strong> ${traducirGenero(item.gender)}</p>
+                        <p><strong>Origen:</strong> ${item.origin ? item.origin.name : 'Desconocido'}</p>
+                    </div>
+                `;
+            } else if (seccionActual === 'lugares') {
+                modalBody.innerHTML = `
+                    <h2>📍 ${item.name}</h2>
+                    <div class="modal-details">
+                        <p><strong>ID:</strong> ${item.id}</p>
+                        <p><strong>Tipo:</strong> ${item.type || 'Desconocido'}</p>
+                        <p><strong>Dimensión:</strong> ${item.dimension || 'Desconocida'}</p>
+                        <p><strong>Residentes:</strong> ${item.residents ? item.residents.length : 0} personajes</p>
+                    </div>
+                `;
+            } else if (seccionActual === 'episodios') {
+                modalBody.innerHTML = `
+                    <h2>🎬 ${item.name}</h2>
+                    <div class="modal-details">
+                        <p><strong>ID:</strong> ${item.id}</p>
+                        <p><strong>Código:</strong> ${item.episode}</p>
+                        <p><strong>Fecha de estreno:</strong> ${item.air_date}</p>
+                        <p><strong>Personajes en escena:</strong> ${item.characters ? item.characters.length : 0}</p>
+                    </div>
+                `;
+            }
+
+            document.getElementById('characterModal').classList.add('active');
+        }
+
+        function cerrarModal() {
+            document.getElementById('characterModal').classList.remove('active');
+        }
+
+        function cerrarModalExterno(event) {
+            if (event.target.classList.contains('modal-overlay')) {
+                cerrarModal();
+            }
+        }
+
+        // Traducciones
+        function traducirEspecie(species) {
+            if (species === 'Human') return 'Humano';
+            if (species === 'Alien') return 'Alienígena';
+            return species;
+        }
+
+        function traducirEstado(status) {
+            if (status === 'Alive') return 'Vivo';
+            if (status === 'Dead') return 'Muerto';
+            return 'Desconocido';
+        }
+
+        function traducirGenero(gender) {
+            if (gender === 'Male') return 'Masculino';
+            if (gender === 'Female') return 'Femenino';
+            return 'Desconocido';
+        }
+
+        // --- BUSCADOR CON DEBOUNCE (4 SEGUNDOS) ---
+        function manejarBusquedaConDelay() {
+            const input = document.getElementById('searchInput');
+            const statusMessage = document.getElementById('statusMessage');
+
+            if (input.value.trim() === "") {
+                clearTimeout(temporizadorBusqueda);
+                statusMessage.textContent = "";
+                mostrarTarjetas(listaDatos);
+                return;
+            }
+
+            statusMessage.textContent = "⏳ Esperando 4 segundos (Debounce) para realizar la búsqueda...";
+            clearTimeout(temporizadorBusqueda);
+
+            temporizadorBusqueda = setTimeout(() => {
+                statusMessage.textContent = "✅ ¡Búsqueda realizada!";
+                ejecutarBusquedaReal();
+            }, 4000);
+        }
+
+        function ejecutarBusquedaReal() {
+            const busqueda = document.getElementById('searchInput').value.toLowerCase().trim();
+
+            const filtrados = listaDatos.filter(item => {
+                return item.name.toLowerCase().includes(busqueda) || item.id.toString() === busqueda;
+            });
+
+            mostrarTarjetas(filtrados);
+
+            setTimeout(() => {
+                document.getElementById('statusMessage').textContent = "";
+            }, 2000);
+        }
+
+        // Cargar personajes al iniciar
+        cargarSeccion('personajes');
+    </script>
+</body>
+
+</html>

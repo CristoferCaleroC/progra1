@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Productos - CRUD</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f4f5f7;
+            padding: 20px;
+            color: #333;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1000px;
+            margin: 0 auto 20px auto;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+        }
+
+        .btn-volver {
+            background-color: #2b3a4a;
+            color: white;
+            padding: 10px 18px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* Barra superior con buscador y botón Nuevo */
+        .controls-bar {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px 18px;
+            border: 1px solid #dcdde1;
+            border-radius: 10px;
+            font-size: 15px;
+            outline: none;
+            background-color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+
+        .btn-nuevo {
+            background-color: #2e86de;
+            color: white;
+            padding: 0 22px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: background 0.2s;
+        }
+
+        .btn-nuevo:hover {
+            background-color: #20559b;
+        }
+
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            text-align: center;
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card img {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            background-color: #eee;
+        }
+
+        .card-body {
+            padding: 15px;
+        }
+
+        .card-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .card-subtitle {
+            font-size: 13px;
+            color: #7f8c8d;
+            margin-top: 4px;
+        }
+
+        /* Estilos de Modales */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background-color: white;
+            border-radius: 14px;
+            width: 100%;
+            max-width: 420px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            position: relative;
+        }
+
+        .modal-header-close {
+            position: absolute;
+            top: 12px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #777;
+        }
+
+        .modal-body {
+            padding: 25px;
+            text-align: center;
+        }
+
+        .modal-body img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .btn-editar {
+            flex: 1;
+            background-color: #f39c12;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn-borrar {
+            flex: 1;
+            background-color: #e74c3c;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* Formulario dentro del modal */
+        .form-group {
+            margin-bottom: 12px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #444;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .btn-guardar {
+            width: 100%;
+            background-color: #27ae60;
+            color: white;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Gestión de Productos</h1>
+        <a href="rickandmorty.html" class="btn-volver">Ir a Rick & Morty →</a>
+    </div>
+
+    <div class="container">
+        <!-- Buscador y Botón Nuevo -->
+        <div class="controls-bar">
+            <input type="text" id="searchInput" class="search-input" placeholder="Realtime search (Nombre, ID)..." onkeyup="filtrarProductos()">
+            <button class="btn-nuevo" onclick="abrirModalNuevo()">+ Nuevo</button>
+        </div>
+
+        <div class="grid-container" id="productsGrid">
+            <!-- Tarjetas dinámicas -->
+        </div>
+    </div>
+
+    <!-- Modal de Detalle con Botones Editar y Borrar -->
+    <div class="modal-overlay" id="productModal" onclick="cerrarModalExterno(event, 'productModal')">
+        <div class="modal-content">
+            <button class="modal-header-close" onclick="cerrarModal('productModal')">&times;</button>
+            <div class="modal-body" id="modalBody">
+                <!-- Se llena dinámicamente -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Formulario (Crear / Editar) -->
+    <div class="modal-overlay" id="formModal" onclick="cerrarModalExterno(event, 'formModal')">
+        <div class="modal-content">
+            <button class="modal-header-close" onclick="cerrarModal('formModal')">&times;</button>
+            <div class="modal-body">
+                <h2 id="formModalTitle" style="margin-bottom: 15px; color: #2c3e50;">Nuevo Producto</h2>
+                <form id="productForm" onsubmit="guardarProductoForm(event)">
+                    <input type="hidden" id="prodId">
+                    <div class="form-group">
+                        <label>Nombre:</label>
+                        <input type="text" id="prodNombre" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Precio ($):</label>
+                        <input type="number" step="0.01" id="prodPrecio" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Descripción:</label>
+                        <textarea id="prodDescripcion" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>URL de la Imagen:</label>
+                        <input type="text" id="prodImagen" class="form-control">
+                    </div>
+                    <button type="submit" class="btn-guardar">Guardar Producto</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let listaProductos = [];
+
+        async function cargarProductos() {
+            try {
+                const response = await fetch('/api/productos');
+                listaProductos = await response.json();
+                mostrarProductos(listaProductos);
+            } catch (error) {
+                console.error('Error al cargar productos:', error);
+            }
+        }
+
+        function mostrarProductos(productos) {
+            const grid = document.getElementById('productsGrid');
+            grid.innerHTML = '';
+
+            productos.forEach(prod => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.onclick = () => abrirModalDetalle(prod.id);
+
+                const imagenProd = prod.imagen || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=500&auto=format&fit=crop&q=60';
+                const nombreProd = prod.nombre || 'Sin nombre';
+                const precioProd = prod.precio !== undefined ? prod.precio : '0.00';
+
+                card.innerHTML = `
+                    <img src="${imagenProd}" alt="${nombreProd}">
+                    <div class="card-body">
+                        <div class="card-title">${nombreProd}</div>
+                        <div class="card-subtitle">ID: ${prod.id} | $ ${precioProd}</div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        // Búsqueda en tiempo real por Nombre o ID
+        function filtrarProductos() {
+            const query = document.getElementById('searchInput').value.toLowerCase().trim();
+            const filtrados = listaProductos.filter(p => {
+                return p.nombre.toLowerCase().includes(query) || p.id.toString() === query;
+            });
+            mostrarProductos(filtrados);
+        }
+
+        // Abrir Modal de Detalle con botones Editar (PUT) y Borrar (DELETE)
+        function abrirModalDetalle(id) {
+            const prod = listaProductos.find(p => p.id === id);
+            if (!prod) return;
+
+            const modalBody = document.getElementById('modalBody');
+            const imagenProd = prod.imagen || 'https://images.unsplash.com/photo-1526170375885-4d8ecf77b99f?w=500&auto=format&fit=crop&q=60';
+
+            modalBody.innerHTML = `
+                <img src="${imagenProd}" alt="${prod.nombre}">
+                <h2 style="font-size: 20px; color: #2c3e50; margin-bottom: 5px;">${prod.nombre}</h2>
+                <p style="color: #7f8c8d; font-size: 13px; margin-bottom: 10px;">ID: ${prod.id} - <strong>$ ${prod.precio}</strong></p>
+                <p style="font-size: 14px; color: #555; text-align: left; margin-bottom: 15px;">${prod.descripcion || 'Sin descripción.'}</p>
+                
+                <div class="modal-actions">
+                    <button class="btn-editar" onclick="abrirModalEditar(${prod.id})">Editar (PUT)</button>
+                    <button class="btn-borrar" onclick="eliminarProducto(${prod.id})">Borrar (DELETE)</button>
+                </div>
+            `;
+
+            document.getElementById('productModal').classList.add('active');
+        }
+
+        // Abrir Modal para Crear Nuevo Producto
+        function abrirModalNuevo() {
+            document.getElementById('formModalTitle').textContent = "Nuevo Producto";
+            document.getElementById('productForm').reset();
+            document.getElementById('prodId').value = "";
+            document.getElementById('formModal').classList.add('active');
+        }
+
+        // Abrir Modal para Editar Producto Existente
+        function abrirModalEditar(id) {
+            cerrarModal('productModal');
+            const prod = listaProductos.find(p => p.id === id);
+            if (!prod) return;
+
+            document.getElementById('formModalTitle').textContent = "Editar Producto";
+            document.getElementById('prodId').value = prod.id;
+            document.getElementById('prodNombre').value = prod.nombre;
+            document.getElementById('prodPrecio').value = prod.precio;
+            document.getElementById('prodDescripcion').value = prod.descripcion || "";
+            document.getElementById('prodImagen').value = prod.imagen || "";
+
+            document.getElementById('formModal').classList.add('active');
+        }
+
+        // Guardar (POST para crear o PUT para actualizar)
+        async function guardarProductoForm(event) {
+            event.preventDefault();
+            const id = document.getElementById('prodId').value;
+            
+            const productoData = {
+                nombre: document.getElementById('prodNombre').value,
+                precio: parseFloat(document.getElementById('prodPrecio').value),
+                descripcion: document.getElementById('prodDescripcion').value,
+                imagen: document.getElementById('prodImagen').value
+            };
+
+            const url = id ? `/api/productos/${id}` : '/api/productos';
+            const method = id ? 'PUT' : 'POST';
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(productoData)
+                });
+
+                if (response.ok) {
+                    cerrarModal('formModal');
+                    cargarProductos();
+                } else {
+                    alert('Error al guardar el producto.');
+                }
+            } catch (error) {
+                console.error('Error en la petición:', error);
+            }
+        }
+
+        // Eliminar Producto (DELETE)
+        async function eliminarProducto(id) {
+            if (!confirm('¿Estás seguro de eliminar este producto?')) return;
+
+            try {
+                const response = await fetch(`/api/productos/${id}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    cerrarModal('productModal');
+                    cargarProductos();
+                } else {
+                    alert('No se pudo eliminar el producto.');
+                }
+            } catch (error) {
+                console.error('Error al eliminar:', error);
+            }
+        }
+
+        function cerrarModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function cerrarModalExterno(event, modalId) {
+            if (event.target.classList.contains('modal-overlay')) {
+                cerrarModal(modalId);
+            }
+        }
+
+        // Cargar al iniciar
+        cargarProductos();
+    </script>
+</body>
+</html>
