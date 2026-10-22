@@ -1,535 +1,57 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rick & Morty API</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-
-        body {
-            background-color: #f4f5f7;
-            padding: 20px;
-            color: #333;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            max-width: 1000px;
-            margin: 0 auto 20px auto;
-        }
-
-        .header h1 {
-            font-size: 28px;
-            font-weight: 700;
-        }
-
-        .btn-volver {
-            background-color: #2b3a4a;
-            color: white;
-            padding: 10px 18px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-        }
-
-        .tabs {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .tab-btn {
-            background-color: #e0e0e0;
-            border: none;
-            padding: 10px 24px;
-            border-radius: 20px;
-            font-weight: 600;
-            cursor: pointer;
-            color: #555;
-            transition: all 0.3s;
-        }
-
-        .tab-btn.active {
-            background-color: #27ae60;
-            color: white;
-        }
-
-        .search-container {
-            margin-bottom: 25px;
-        }
-
-        .search-input {
-            width: 100%;
-            padding: 14px 20px;
-            border-radius: 25px;
-            border: 1px solid #ccc;
-            font-size: 16px;
-            outline: none;
-            background-color: #fff;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-        }
-
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 20px;
-        }
-
-        .card {
-            background-color: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-            text-align: center;
-            transition: transform 0.2s;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-        }
-
-        .card img {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-        }
-
-        .card-body {
-            padding: 15px;
-        }
-
-        .card-title {
-            font-size: 16px;
-            font-weight: 700;
-            color: #2c3e50;
-        }
-
-        .card-subtitle {
-            font-size: 13px;
-            color: #7f8c8d;
-            margin-top: 4px;
-        }
-
-        /* --- ESTILOS DEL MODAL --- */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            padding: 20px;
-        }
-
-        .modal-overlay.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background-color: white;
-            border-radius: 12px;
-            width: 100%;
-            max-width: 400px;
-            overflow: hidden;
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
-            position: relative;
-            animation: modalFadeIn 0.3s;
-        }
-
-        @keyframes modalFadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .modal-header {
-            background-color: #e74c3c;
-            color: white;
-            padding: 10px;
-            text-align: center;
-            cursor: pointer;
-            font-weight: bold;
-        }
-
-        .modal-body {
-            padding: 20px;
-            text-align: left;
-        }
-
-        .modal-body img {
-            width: 100%;
-            height: auto;
-            border-radius: 8px;
-            margin-bottom: 15px;
-        }
-
-        .modal-body h2 {
-            font-size: 22px;
-            margin-bottom: 10px;
-            color: #2c3e50;
-        }
-
-        .modal-details p {
-            margin-bottom: 8px;
-            font-size: 14px;
-            color: #555;
-        }
-
-        .modal-details strong {
-            color: #333;
-        }
-    </style>
+    <title>Rick and Morty - API Explorer</title>
+    <!-- Enlace al archivo CSS externo -->
+    <link rel="stylesheet" href="/css/rickandmorty.css">
 </head>
-
 <body>
 
     <div class="header">
-        <h1>Rick & Morty</h1>
+        <h1>Universo Rick & Morty</h1>
         <a href="productos.html" class="btn-volver">← Volver a Productos</a>
     </div>
 
     <div class="container">
-        <!-- Pestañas -->
+        <!-- Pestañas para cambiar entre Personajes, Lugares y Episodios -->
         <div class="tabs">
-            <button class="tab-btn active" id="tab-personajes" onclick="cambiarSeccion('personajes')">1. Personajes</button>
-            <button class="tab-btn" id="tab-lugares" onclick="cambiarSeccion('lugares')">2. Lugares</button>
-            <button class="tab-btn" id="tab-episodios" onclick="cambiarSeccion('episodios')">3. Episodios</button>
+            <button class="tab-btn active" onclick="cambiarSeccion('personajes')">1. Personajes</button>
+            <button class="tab-btn" onclick="cambiarSeccion('lugares')">2. Lugares</button>
+            <button class="tab-btn" onclick="cambiarSeccion('episodios')">3. Episodios</button>
         </div>
 
-        <!-- Buscador con mensaje de Delay -->
-        <div class="search-container">
-            <input type="text" id="searchInput" class="search-input" placeholder="Escribe para buscar (Nombre o ID)"
-                onkeyup="manejarBusquedaConDelay()">
-            <div id="statusMessage"
-                style="font-size: 13px; color: #7f8c8d; margin-top: 6px; text-align: center; font-style: italic;"></div>
+        <!-- Barra de Búsqueda y Cuenta Regresiva (Limlia de estilos en línea oscuros) -->
+        <div class="controls-bar" style="margin-bottom: 20px;">
+            <input type="text" id="searchInput" class="search-input" placeholder="Escribe para buscar (Nombre o ID)..." oninput="manejarBusquedaConDelay()">
+            <div id="countdownIndicator" style="margin-top: 8px; font-size: 14px; color: #3182ce; font-weight: bold; min-height: 20px;"></div>
         </div>
 
-        <!-- Lista de tarjetas -->
-        <div class="grid-container" id="charactersGrid">
-            <!-- Se cargará dinámicamente -->
+        <!-- Contenedor dinámico de tarjetas -->
+        <div class="grid-container" id="rmGrid">
+            <!-- Datos cargados por JavaScript -->
+        </div>
+
+        <!-- Controles de Paginación -->
+        <div class="pagination" id="paginationControls">
+            <button class="page-btn" onclick="cambiarPagina(-1)">Anterior</button>
+            <span id="pageIndicator">Página 1</span>
+            <button class="page-btn" onclick="cambiarPagina(1)">Siguiente</button>
         </div>
     </div>
 
-    <!-- Modal para Detalle -->
-    <div class="modal-overlay" id="characterModal" onclick="cerrarModalExterno(event)">
+    <!-- Modal de Detalle (Popup) -->
+    <div class="modal-overlay" id="rmModal" onclick="cerrarModalExterno(event)">
         <div class="modal-content">
-            <div class="modal-header" onclick="cerrarModal()">
-                ← BACK (Cerrar)
-            </div>
-            <div class="modal-body" id="modalBody">
-                <!-- El contenido se cargará dinámicamente -->
+            <button class="modal-header-back" onclick="cerrarModal()">— BACK (Cerrar)</button>
+            <div class="modal-body" id="modalBodyContent">
+                <!-- Se llena dinámicamente -->
             </div>
         </div>
     </div>
-<script>
-    let seccionActual = 'personajes';
-    let listaDatos = [];
-    let paginaActual = 1;
-    let hayMasPaginas = true;
-    let cargando = false;
-    let temporizadorBusqueda = null;
-    let intervaloContador = null;
 
-    // 1. Cargar la primera página al iniciar o cambiar de pestaña
-    async function cargarSeccion(seccion) {
-        seccionActual = seccion;
-        paginaActual = 1;
-        hayMasPaginas = true;
-        listaDatos = [];
-        
-        const grid = document.getElementById('charactersGrid');
-        grid.innerHTML = ''; // Limpiar vista anterior
-
-        await cargarPagina(seccion, paginaActual);
-    }
-
-    // 2. Función para solicitar una página específica al backend (BFF)
-    async function cargarPagina(seccion, pagina) {
-        if (cargando || !hayMasPaginas) return;
-        cargando = true;
-
-        const statusMessage = document.getElementById('statusMessage');
-        statusMessage.textContent = `⏳ Cargando más registros de ${seccion}...`;
-
-        try {
-            const response = await fetch(`/api/rickandmorty/${seccion}?page=${pagina}`);
-            const data = await response.json();
-
-            if (data.results && data.results.length > 0) {
-                listaDatos = listaDatos.concat(data.results);
-                mostrarTarjetas(listaDatos);
-
-                if (data.info && data.info.next) {
-                    paginaActual++;
-                } else {
-                    hayMasPaginas = false;
-                }
-            } else {
-                hayMasPaginas = false;
-            }
-
-            statusMessage.textContent = "";
-        } catch (error) {
-            console.error(`Error al cargar ${seccion}:`, error);
-            statusMessage.textContent = "❌ Error al cargar los datos.";
-        } finally {
-            cargando = false;
-        }
-    }
-
-    // 3. Detector de Scroll Infinito (Solo si el buscador está vacío)
-    window.addEventListener('scroll', () => {
-        const inputBusqueda = document.getElementById('searchInput').value.trim();
-        if (inputBusqueda !== "") return; // Desactivar scroll en modo búsqueda
-
-        if ((window.innerHeight + window.scrollY) >= document.documentElement.scrollHeight - 300) {
-            if (!cargando && hayMasPaginas) {
-                cargarPagina(seccionActual, paginaActual);
-            }
-        }
-    });
-
-    // Cambiar de pestaña
-    function cambiarSeccion(seccion) {
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        document.getElementById(`tab-${seccion}`).classList.add('active');
-        
-        document.getElementById('searchInput').value = '';
-        document.getElementById('statusMessage').textContent = '';
-        clearTimeout(temporizadorBusqueda);
-        if (intervaloContador) clearInterval(intervaloContador);
-
-        cargarSeccion(seccion);
-    }
-
-    // Renderizar tarjetas
-    function mostrarTarjetas(items) {
-        const grid = document.getElementById('charactersGrid');
-        grid.innerHTML = '';
-
-        if (!items || items.length === 0) {
-            grid.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: #777; font-size: 16px;">No se encontraron resultados.</p>';
-            return;
-        }
-
-        items.forEach(item => {
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.dataset.id = item.id;
-            card.style.cursor = 'pointer';
-            card.onclick = () => abrirModal(item.id, item);
-
-            if (seccionActual === 'personajes') {
-                card.innerHTML = `
-                    <img src="${item.image}" alt="${item.name}">
-                    <div class="card-body">
-                        <div class="card-title">${item.name} <span style="font-weight: normal; color: #777;">(#${item.id})</span></div>
-                    </div>
-                `;
-            } else if (seccionActual === 'lugares') {
-                card.innerHTML = `
-                    <div class="card-body" style="padding: 35px 15px;">
-                        <div class="card-title">📍 ${item.name}</div>
-                        <div class="card-subtitle">ID: #${item.id}</div>
-                        <div class="card-subtitle" style="margin-top: 8px; color: #27ae60; font-weight: 600;">Tipo: ${item.type || 'N/A'}</div>
-                    </div>
-                `;
-            } else if (seccionActual === 'episodios') {
-                card.innerHTML = `
-                    <div class="card-body" style="padding: 35px 15px;">
-                        <div class="card-title">🎬 ${item.name}</div>
-                        <div class="card-subtitle">Episodio: <strong>${item.episode}</strong></div>
-                        <div class="card-subtitle" style="margin-top: 8px; color: #e67e22; font-weight: 600;">Fecha: ${item.air_date}</div>
-                    </div>
-                `;
-            }
-
-            grid.appendChild(card);
-        });
-    }
-
-    // --- BUSCADOR CON DEBOUNCE (4 SEGUNDOS VISUALES Y BÚSQUEDA REMOTA DIRECTA) ---
-    function manejarBusquedaConDelay() {
-        const input = document.getElementById('searchInput');
-        const statusMessage = document.getElementById('statusMessage');
-
-        clearTimeout(temporizadorBusqueda);
-        if (intervaloContador) clearInterval(intervaloContador);
-
-        const busqueda = input.value.trim();
-
-        if (busqueda === "") {
-            statusMessage.textContent = "";
-            mostrarTarjetas(listaDatos); // Restaurar lista paginada local
-            return;
-        }
-
-        let segundosRestantes = 4;
-        statusMessage.textContent = `⏳ Esperando ${segundosRestantes} segundos (Debounce) para buscar en la API...`;
-
-        intervaloContador = setInterval(() => {
-            segundosRestantes--;
-            if (segundosRestantes > 0) {
-                statusMessage.textContent = `⏳ Esperando ${segundosRestantes} segundo${segundosRestantes > 1 ? 's' : ''} (Debounce) para buscar en la API...`;
-            } else {
-                clearInterval(intervaloContador);
-            }
-        }, 1000);
-
-        temporizadorBusqueda = setTimeout(() => {
-            statusMessage.textContent = "🔍 Buscando en la API...";
-            ejecutarBusquedaRealRemota(busqueda);
-        }, 4000);
-    }
-
-    // Búsqueda remota inteligente
-    async function ejecutarBusquedaRealRemota(query) {
-        const statusMessage = document.getElementById('statusMessage');
-        const esNumero = !isNaN(query);
-
-        try {
-            let resultados = [];
-
-            if (esNumero) {
-                // Si es un ID específico (ej. 100), consultar el elemento directamente por ID
-                const singularMap = { 'personajes': 'character', 'lugares': 'location', 'episodios': 'episode' };
-                const endpointSingular = singularMap[seccionActual] || 'character';
-                
-                const response = await fetch(`https://rickandmortyapi.com/api/${endpointSingular}/${query}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    resultados = [data];
-                }
-            } else {
-                // Si es texto (ej. "Rick"), consultar por parámetro de nombre a la API
-                const singularMap = { 'personajes': 'character', 'lugares': 'location', 'episodios': 'episode' };
-                const endpointSingular = singularMap[seccionActual] || 'character';
-
-                const response = await fetch(`https://rickandmortyapi.com/api/${endpointSingular}/?name=${encodeURIComponent(query)}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    resultados = data.results || [];
-                }
-            }
-
-            mostrarTarjetas(resultados);
-            statusMessage.textContent = resultados.length > 0 ? "✅ ¡Búsqueda completada!" : "⚠️ No se encontraron resultados.";
-
-        } catch (error) {
-            console.error("Error en la búsqueda remota:", error);
-            statusMessage.textContent = "❌ Error al realizar la búsqueda en la API.";
-        }
-
-        setTimeout(() => {
-            statusMessage.textContent = "";
-        }, 2500);
-    }
-
-    // --- FUNCIONES DEL MODAL ---
-    function abrirModal(id, itemDirecto = null) {
-        let item = itemDirecto || listaDatos.find(i => i.id === id);
-        if (!item) return;
-
-        const modalBody = document.getElementById('modalBody');
-
-        if (seccionActual === 'personajes') {
-            modalBody.innerHTML = `
-                <img src="${item.image}" alt="${item.name}">
-                <h2>${item.name}</h2>
-                <div class="modal-details">
-                    <p><strong>ID:</strong> ${item.id}</p>
-                    <p><strong>Especie:</strong> ${traducirEspecie(item.species)}</p>
-                    <p><strong>Estado:</strong> ${traducirEstado(item.status)}</p>
-                    <p><strong>Género:</strong> ${traducirGenero(item.gender)}</p>
-                    <p><strong>Origen:</strong> ${item.origin ? item.origin.name : 'Desconocido'}</p>
-                </div>
-            `;
-        } else if (seccionActual === 'lugares') {
-            modalBody.innerHTML = `
-                <h2>📍 ${item.name}</h2>
-                <div class="modal-details">
-                    <p><strong>ID:</strong> ${item.id}</p>
-                    <p><strong>Tipo:</strong> ${item.type || 'Desconocido'}</p>
-                    <p><strong>Dimensión:</strong> ${item.dimension || 'Desconocida'}</p>
-                    <p><strong>Residentes:</strong> ${item.residents ? item.residents.length : 0} personajes</p>
-                </div>
-            `;
-        } else if (seccionActual === 'episodios') {
-            modalBody.innerHTML = `
-                <h2>🎬 ${item.name}</h2>
-                <div class="modal-details">
-                    <p><strong>ID:</strong> ${item.id}</p>
-                    <p><strong>Código:</strong> ${item.episode}</p>
-                    <p><strong>Fecha de estreno:</strong> ${item.air_date}</p>
-                    <p><strong>Personajes en escena:</strong> ${item.characters ? item.characters.length : 0}</p>
-                </div>
-            `;
-        }
-
-        document.getElementById('characterModal').classList.add('active');
-    }
-
-    function cerrarModal() {
-        document.getElementById('characterModal').classList.remove('active');
-    }
-
-    function cerrarModalExterno(event) {
-        if (event.target.classList.contains('modal-overlay')) {
-            cerrarModal();
-        }
-    }
-
-    // Traducciones
-    function traducirEspecie(species) {
-        if (species === 'Human') return 'Humano';
-        if (species === 'Alien') return 'Alienígena';
-        return species || 'Desconocido';
-    }
-
-    function traducirEstado(status) {
-        if (status === 'Alive') return 'Vivo';
-        if (status === 'Dead') return 'Muerto';
-        return 'Desconocido';
-    }
-
-    function traducirGenero(gender) {
-        if (gender === 'Male') return 'Masculino';
-        if (gender === 'Female') return 'Femenino';
-        return 'Desconocido';
-    }
-
-    // Cargar primera página al iniciar
-    cargarSeccion('personajes');
-</script>
+    <!-- Enlace al archivo JavaScript externo -->
+    <script src="/js/rickandmorty.js"></script>
 </body>
-
 </html>
