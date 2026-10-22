@@ -132,24 +132,71 @@ async function ejecutarBusquedaServidor(query) {
     }
 }
 
-function abrirModalDetalle(item) {
+async function abrirModalDetalle(item) {
     const modalBody = document.getElementById('modalBodyContent');
     const modal = document.getElementById('rmModal');
 
     if (!modalBody || !modal) return;
 
     if (seccionActual === 'personajes') {
+        // 1. Mostramos un estado de carga mientras el backend procesa las URLs anidadas
         modalBody.innerHTML = `
             <img src="${item.image || ''}" alt="${item.name}">
             <h2>${item.name}</h2>
-            <div class="modal-info-list">
-                <div><span>ID:</span> ${item.id}</div>
-                <div><span>Especie:</span> ${item.species}</div>
-                <div><span>Estado:</span> ${item.status}</div>
-                <div><span>Género:</span> ${item.gender}</div>
-                <div><span>Origen:</span> ${item.origin ? item.origin.name : 'Unknown'}</div>
-            </div>
+            <p style="text-align: center; color: #666; margin: 15px 0;">Cargando ubicación y episodios...</p>
         `;
+        modal.classList.add('active');
+
+        try {
+            // 2. Consumimos nuestro nuevo endpoint anidado del backend
+            const response = await fetch(`/api/rickandmorty/personajes/${item.id}/detalles`);
+            const detalles = await response.json();
+
+            // 3. Procesamos la lista de episodios para listarlos de forma limpia
+            let episodiosHtml = '<p style="color: #888;">Sin episodios registrados</p>';
+            if (detalles.episodios && detalles.episodios.length > 0) {
+                episodiosHtml = '<ul style="max-height: 150px; overflow-y: auto; text-align: left; padding-left: 20px; margin: 5px 0;">';
+                detalles.episodios.forEach(ep => {
+                    episodiosHtml += `<li><b>${ep.episode}</b>: ${ep.name}</li>`;
+                });
+                episodiosHtml += '</ul>';
+            }
+
+            // 4. Procesamos la información del lugar
+            let lugarNombre = 'Desconocido / Sin locación';
+            let lugarTipo = 'N/A';
+            let lugarDim = 'N/A';
+            if (detalles.lugar && detalles.lugar.name) {
+                lugarNombre = detalles.lugar.name;
+                lugarTipo = detalles.lugar.type || 'N/A';
+                lugarDim = detalles.lugar.dimension || 'N/A';
+            } else if (typeof detalles.lugar === 'string') {
+                lugarNombre = detalles.lugar;
+            }
+
+            // 5. Renderizamos el contenido final en el modal con las 2 secciones clave
+            modalBody.innerHTML = `
+                <img src="${detalles.characterImage || item.image || ''}" alt="${detalles.characterName || item.name}">
+                <h2>${detalles.characterName || item.name}</h2>
+                
+                <div class="modal-info-list" style="margin-top: 15px;">
+                    <div style="background: #f8f9fa; padding: 10px; border-radius: 6px; margin-bottom: 10px;">
+                        <strong style="color: #2c3e50; display: block; margin-bottom: 4px;">📍 Lugar de Residencia / Origen:</strong>
+                        <span><b>Nombre:</b> ${lugarNombre}</span><br>
+                        <span><b>Tipo:</b> ${lugarTipo} | <b>Dimensión:</b> ${lugarDim}</span>
+                    </div>
+
+                    <div style="background: #f8f9fa; padding: 10px; border-radius: 6px;">
+                        <strong style="color: #2c3e50; display: block; margin-bottom: 4px;">🎬 Episodios en los que participa (${detalles.episodios ? detalles.episodios.length : 0}):</strong>
+                        ${episodiosHtml}
+                    </div>
+                </div>
+            `;
+        } catch (error) {
+            console.error('Error al obtener los detalles anidados del personaje:', error);
+            modalBody.innerHTML = `<p style="color: red; text-align: center;">Error al cargar los detalles del personaje.</p>`;
+        }
+
     } else if (seccionActual === 'lugares') {
         modalBody.innerHTML = `
             <h2>${item.name}</h2>
@@ -159,6 +206,7 @@ function abrirModalDetalle(item) {
                 <div><span>Dimensión:</span> ${item.dimension}</div>
             </div>
         `;
+        modal.classList.add('active');
     } else if (seccionActual === 'episodios') {
         modalBody.innerHTML = `
             <h2>${item.name}</h2>
@@ -168,9 +216,8 @@ function abrirModalDetalle(item) {
                 <div><span>Lanzamiento:</span> ${item.air_date}</div>
             </div>
         `;
+        modal.classList.add('active');
     }
-
-    modal.classList.add('active');
 }
 
 function cerrarModal() {

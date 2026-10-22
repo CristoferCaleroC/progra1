@@ -12,4 +12,9 @@ public interface RickAndMortyService {
     Object obtenerEpisodios(int page);
     Object buscarEpisodiosPorNombre(String name);
     Object obtenerEpisodioPorId(Long id);
+
+    Object obtenerPersonajesDeEpisodio(Long id);
+    Object obtenerResidentesDeLugar(Long id);
+    
+    Object obtenerUbicacionYEpisodiosDePersonaje(Long id);
 }

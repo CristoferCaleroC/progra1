@@ -47,6 +47,12 @@ public class RickAndMortyController {
         return rickAndMortyService.obtenerLugarPorId(id);
     }
 
+    // NUEVO: Endpoint anidado para residentes de un lugar
+    @GetMapping("/lugares/{id}/residentes")
+    public Object obtenerResidentesDeLugar(@PathVariable Long id) {
+        return rickAndMortyService.obtenerResidentesDeLugar(id);
+    }
+
     // --- EPISODIOS ---
     @GetMapping("/episodios")
     public Object obtenerEpisodios(
@@ -61,5 +67,18 @@ public class RickAndMortyController {
     @GetMapping("/episodios/{id}")
     public Object obtenerEpisodioPorId(@PathVariable Long id) {
         return rickAndMortyService.obtenerEpisodioPorId(id);
+    }
+
+    // NUEVO: Endpoint anidado para personajes de un episodio
+    @GetMapping("/episodios/{id}/personajes")
+    public Object obtenerPersonajesDeEpisodio(@PathVariable Long id) {
+        return rickAndMortyService.obtenerPersonajesDeEpisodio(id);
+    }
+
+
+    // Endpoint anidado: Desde un personaje obtener su lugar y episodios
+    @GetMapping("/personajes/{id}/detalles")
+    public Object obtenerUbicacionYEpisodiosDePersonaje(@PathVariable Long id) {
+        return rickAndMortyService.obtenerUbicacionYEpisodiosDePersonaje(id);
     }
 }
