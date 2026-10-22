@@ -4,7 +4,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import progra1.com.example.progra1.service.RickAndMortyService;
 
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -74,6 +73,7 @@ public class RickAndMortyServiceImpl implements RickAndMortyService {
 
     // --- ENDPOINTS ANINADOS (Consumiendo las URLs que provee la API) ---
     @Override
+    @SuppressWarnings("unchecked")
     public Object obtenerPersonajesDeEpisodio(Long id) {
         try {
             String episodioUrl = BASE_URL + "/episode/" + id;
@@ -98,6 +98,7 @@ public class RickAndMortyServiceImpl implements RickAndMortyService {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public Object obtenerResidentesDeLugar(Long id) {
         try {
             String lugarUrl = BASE_URL + "/location/" + id;
@@ -120,7 +121,9 @@ public class RickAndMortyServiceImpl implements RickAndMortyService {
             return new ArrayList<>();
         }
     }
+
 @Override
+    @SuppressWarnings("unchecked")
     public Object obtenerUbicacionYEpisodiosDePersonaje(Long id) {
         try {
             String characterUrl = BASE_URL + "/character/" + id;
@@ -150,30 +153,40 @@ public class RickAndMortyServiceImpl implements RickAndMortyService {
                 resultado.put("lugar", locationInfo);
             }
 
-            // 2. Manejo optimizado y en paralelo de la lista de episodios
+            // 2. Optimización por Lotes (Batch): ¡Una sola petición para todos los episodios!
             Object episodesObj = character.get("episode");
             List<Object> episodios = new ArrayList<>();
             
             if (episodesObj instanceof List) {
                 List<?> episodeUrls = (List<?>) episodesObj;
+                List<String> idsList = new ArrayList<>();
                 
-                // Disparamos todas las peticiones HTTP de forma concurrente en paralelo
-                List<java.util.concurrent.CompletableFuture<Object>> futures = episodeUrls.stream()
-                    .filter(epUrl -> epUrl instanceof String)
-                    .map(epUrl -> java.util.concurrent.CompletableFuture.supplyAsync(() -> {
-                        try {
-                            return restTemplate.getForObject((String) epUrl, Object.class);
-                        } catch (Exception e) {
-                            return null; // Si falla un episodio individual, lo ignoramos de forma segura
+                // Extraemos únicamente el ID numérico de cada URL de episodio
+                for (Object epUrlObj : episodeUrls) {
+                    if (epUrlObj instanceof String) {
+                        String urlStr = (String) epUrlObj;
+                        String episodeId = urlStr.substring(urlStr.lastIndexOf("/") + 1);
+                        idsList.add(episodeId);
+                    }
+                }
+                
+                if (!idsList.isEmpty()) {
+                    // Unimos todos los IDs con comas (Ej: "1,2,3,10,25")
+                    String idsString = String.join(",", idsList);
+                    String batchUrl = BASE_URL + "/episode/" + idsString;
+                    
+                    try {
+                        Object response = restTemplate.getForObject(batchUrl, Object.class);
+                        // Si son varios episodios, la API devuelve una lista. Si fuera solo 1, devuelve un mapa.
+                        if (response instanceof List) {
+                            episodios = (List<Object>) response;
+                        } else if (response instanceof Map) {
+                            episodios.add(response);
                         }
-                    }))
-                    .collect(java.util.stream.Collectors.toList());
-
-                // Recogemos todos los resultados en paralelo
-                episodios = futures.stream()
-                    .map(java.util.concurrent.CompletableFuture::join)
-                    .filter(ep -> ep != null)
-                    .collect(java.util.stream.Collectors.toList());
+                    } catch (Exception e) {
+                        System.err.println("Error al cargar episodios por lote: " + e.getMessage());
+                    }
+                }
             }
             resultado.put("episodios", episodios);
 
